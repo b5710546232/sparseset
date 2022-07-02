@@ -8,7 +8,7 @@ import (
 type SparseSet[T any] struct {
 	Sparse    []uint // Stores index, id
 	Dense     []T    // Stores the actual data
-	n         int
+	n         int    // Current size of dense
 	denseSize int
 }
 
@@ -47,13 +47,28 @@ func (s *SparseSet[T]) Put(id uint, val T) bool {
 	}
 	s.Sparse[idx] = idx
 
-	if len(s.Dense) < s.denseSize {
+	if s.n < len(s.Dense) {
 		s.Dense[denseIdx] = val
 	} else {
 		s.Dense = append(s.Dense, val)
 	}
 
 	return true
+}
+
+func (s *SparseSet[T]) Get(id uint) T {
+	sIdx := id - 1
+	idx := s.Sparse[sIdx]
+	fmt.Println("idx", idx, s.Dense)
+	if idx == emptySlot {
+		var t T
+		return pass(t)
+	}
+	return s.Dense[idx]
+}
+
+func pass[T any](tp T) T {
+	return tp
 }
 
 func (s *SparseSet[T]) Remove(id uint) bool {

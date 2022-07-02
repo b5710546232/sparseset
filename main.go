@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/b5710546232/sparseset/sparseset"
 )
 
@@ -24,5 +26,7 @@ func main() {
 	// ss.PrintDense()
 
 	// fmt.Println("ss.Contains(3)", ss.Contains(10))
+
+	fmt.Println("get", ss.Get(1))
 
 }
