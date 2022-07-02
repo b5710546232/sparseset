@@ -38,14 +38,17 @@ func (s *SparseSet[T]) Put(id uint, val T) bool {
 
 	if !s.Contains(id) {
 		s.n += 1
+	} else {
+		denseIdx = int(s.Sparse[idx])
+		fmt.Println("!!!!!", denseIdx)
 	}
-	diffSparseSize := int(idx) - len(s.Sparse) + 1
+	diffSparseSize := int(idx) - len(s.Sparse)
 	if diffSparseSize > 0 {
 		for i := 0; i < diffSparseSize; i++ {
 			s.Sparse = append(s.Sparse, emptySlot)
 		}
 	}
-	s.Sparse[idx] = idx
+	s.Sparse[idx] = uint(s.n) - 1
 
 	if s.n < len(s.Dense) {
 		s.Dense[denseIdx] = val
@@ -56,15 +59,15 @@ func (s *SparseSet[T]) Put(id uint, val T) bool {
 	return true
 }
 
-func (s *SparseSet[T]) Get(id uint) T {
+func (s *SparseSet[T]) Get(id uint) (T, bool) {
 	sIdx := id - 1
 	idx := s.Sparse[sIdx]
 	fmt.Println("idx", idx, s.Dense)
 	if idx == emptySlot {
 		var t T
-		return pass(t)
+		return pass(t), false
 	}
-	return s.Dense[idx]
+	return s.Dense[idx], true
 }
 
 func pass[T any](tp T) T {
@@ -76,7 +79,7 @@ func (s *SparseSet[T]) Remove(id uint) bool {
 		return false
 	}
 
-	lastDense := s.Dense[s.n]
+	lastDense := s.Dense[s.n-1]
 	idx := id - 1
 	s.Dense[idx] = lastDense
 	s.Sparse[idx] = emptySlot

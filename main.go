@@ -15,18 +15,36 @@ func main() {
 
 	ss.Put(2, 10)
 
-	ss.Put(10, 9)
+	ss.Put(10, 19)
 
-	ss.Put(3, 7)
-	ss.Put(3, 7)
+	ss.Put(7, 7)
+	ss.PrintSpase()
+	ss.PrintDense()
+	ss.Put(7, 999)
+	ss.PrintSpase()
+	ss.PrintDense()
+	ss.Put(7, 99111)
+	ss.PrintSpase()
+	ss.PrintDense()
+	ss.Put(1, 99111)
+	ss.PrintSpase()
+	ss.PrintDense()
+	// ss.Put(3, 7)
+	// ss.Put(3, 7)
+	// ss.Put(3, 7)
+	// ss.Put(3, 7)
 	// ss.PrintSpase()
 	// ss.PrintDense()
+	fmt.Println("------remove------")
 	ss.Remove(2)
-	// ss.PrintSpase()
-	// ss.PrintDense()
+	ss.PrintSpase()
+	ss.PrintDense()
 
 	// fmt.Println("ss.Contains(3)", ss.Contains(10))
-
-	fmt.Println("get", ss.Get(1))
+	ss.PrintSpase()
+	v, ok := ss.Get(1)
+	fmt.Println("get", v, ok)
+	v, ok = ss.Get(5)
+	fmt.Println("get", v, ok)
 
 }
