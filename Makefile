@@ -1,5 +1,5 @@
 bench:
-	go test -bench=.  -benchmem ./benchmark/compare_sparse_map_test.go
+	go test -bench=. -benchtime=1s -benchmem ./benchmark/compare_test.go
 
 .PHONY: test
 test:

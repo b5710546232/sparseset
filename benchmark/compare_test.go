@@ -6,6 +6,33 @@ import (
 	"github.com/b5710546232/sparseset/sparseset"
 )
 
+func Benchmark_slice_int_read_10_000(b *testing.B) {
+	n := 10_000
+	m := make([]int, n)
+	for i := 0; i < n; i++ {
+		m[i] = i
+	}
+	var val int
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for i := range m {
+			val = m[i]
+		}
+	}
+	_ = val
+}
+
+func Benchmark_slice_int_write_10_000(b *testing.B) {
+	n := 10_000
+	m := make([]int, n)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for i := 0; i < n; i++ {
+			m[i] = i
+		}
+	}
+}
+
 func Benchmark_map_int_write_10_000(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		benchmark_map_write(10_000)
