@@ -6,24 +6,24 @@ import (
 )
 
 type SparseSet[T any] struct {
-	Sparse    []uint // Stores index, id
-	Dense     []T    // Stores the actual data
+	sparse    []uint // Stores index, id
+	dense     []T    // Stores the actual data
 	n         int    // Current size of dense
 	denseSize int
 }
 
 const emptySlot = math.MaxUint
 
-func NewSparseSet[T any](initialSparseSize int, initialDenseSize int) *SparseSet[T] {
+func NewSparseSet[T any](initialSize int) *SparseSet[T] {
 	ss := &SparseSet[T]{
-		Sparse:    make([]uint, initialSparseSize),
-		Dense:     make([]T, initialDenseSize),
-		denseSize: initialDenseSize,
+		sparse:    make([]uint, initialSize),
+		dense:     make([]T, initialSize),
+		denseSize: initialSize,
 		n:         0,
 	}
 
-	for i := range ss.Sparse {
-		ss.Sparse[i] = emptySlot
+	for i := range ss.sparse {
+		ss.sparse[i] = emptySlot
 	}
 	return ss
 }
@@ -35,39 +35,40 @@ func (s *SparseSet[T]) Put(id uint, val T) bool {
 
 	idx := id - 1
 	denseIdx := s.n
-
 	if !s.Contains(id) {
 		s.n += 1
 	} else {
-		denseIdx = int(s.Sparse[idx])
-		fmt.Println("!!!!!", denseIdx)
+		denseIdx = int(s.sparse[idx])
 	}
-	diffSparseSize := int(idx) - len(s.Sparse)
-	if diffSparseSize > 0 {
-		for i := 0; i < diffSparseSize; i++ {
-			s.Sparse = append(s.Sparse, emptySlot)
+	diffSparseSize := int(idx) - len(s.sparse)
+	if diffSparseSize >= 0 {
+		for i := 0; i < diffSparseSize+1; i++ {
+			s.sparse = append(s.sparse, emptySlot)
 		}
 	}
-	s.Sparse[idx] = uint(s.n) - 1
-
-	if s.n < len(s.Dense) {
-		s.Dense[denseIdx] = val
+	lastcurrentDenseSizeIdx := uint(s.n) - 1
+	s.sparse[idx] = lastcurrentDenseSizeIdx
+	if s.n <= len(s.dense) {
+		s.dense[denseIdx] = val
 	} else {
-		s.Dense = append(s.Dense, val)
+		s.dense = append(s.dense, val)
 	}
 
 	return true
 }
 
 func (s *SparseSet[T]) Get(id uint) (T, bool) {
-	sIdx := id - 1
-	idx := s.Sparse[sIdx]
-	fmt.Println("idx", idx, s.Dense)
+	sIdx := int(id - 1)
+	if sIdx > len(s.sparse) {
+		var t T
+		return pass(t), false
+	}
+	idx := s.sparse[sIdx]
 	if idx == emptySlot {
 		var t T
 		return pass(t), false
 	}
-	return s.Dense[idx], true
+	return s.dense[idx], true
 }
 
 func pass[T any](tp T) T {
@@ -79,10 +80,10 @@ func (s *SparseSet[T]) Remove(id uint) bool {
 		return false
 	}
 
-	lastDense := s.Dense[s.n-1]
+	lastDense := s.dense[s.n-1]
 	idx := id - 1
-	s.Dense[idx] = lastDense
-	s.Sparse[idx] = emptySlot
+	s.dense[idx] = lastDense
+	s.sparse[idx] = emptySlot
 
 	s.n -= 1
 	return true
@@ -91,7 +92,7 @@ func (s *SparseSet[T]) Remove(id uint) bool {
 func (s *SparseSet[T]) PrintDense() {
 	fmt.Printf("\n----PrintDense----\n")
 	for i := 0; i < s.n; i++ {
-		fmt.Println("idx", i, "=>", s.Dense[i])
+		fmt.Println("idx", i, "=>", s.dense[i])
 	}
 	fmt.Printf("\n--------\n")
 }
@@ -99,11 +100,11 @@ func (s *SparseSet[T]) PrintDense() {
 func (s *SparseSet[T]) PrintSpase() {
 	fmt.Println("PrintSpase")
 	fmt.Printf("[ ")
-	for i := range s.Sparse {
-		if s.Sparse[i] == emptySlot {
+	for i := range s.sparse {
+		if s.sparse[i] == emptySlot {
 			fmt.Print(" nil ,")
 		} else {
-			fmt.Printf("%d ,", s.Sparse[i])
+			fmt.Printf("%d ,", s.sparse[i])
 		}
 
 	}
@@ -113,9 +114,9 @@ func (s *SparseSet[T]) PrintSpase() {
 func (s *SparseSet[T]) PrintSpaseIds() {
 	fmt.Println("PrintSpase")
 	fmt.Printf(" [\n")
-	for i := range s.Sparse {
-		if s.Sparse[i] != emptySlot {
-			fmt.Printf("\tindex-%d => %d \n", i, s.Sparse[i]+1)
+	for i := range s.sparse {
+		if s.sparse[i] != emptySlot {
+			fmt.Printf("\tindex-%d => %d \n", i, s.sparse[i]+1)
 		}
 
 	}
@@ -124,8 +125,18 @@ func (s *SparseSet[T]) PrintSpaseIds() {
 
 func (s *SparseSet[T]) Contains(id uint) bool {
 	idx := id - 1
-	if int(idx) > len(s.Sparse)-1 {
+	if int(idx) > len(s.sparse)-1 {
 		return false
 	}
-	return s.Sparse[idx] != emptySlot
+	return s.sparse[idx] != emptySlot
+}
+
+func (s *SparseSet[T]) ForEach(f func(int, T)) {
+	for i := range s.dense {
+		f(i, s.dense[i])
+	}
+}
+
+func (s *SparseSet[T]) Dense() []T {
+	return s.dense
 }

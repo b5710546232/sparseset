@@ -1,7 +1,6 @@
 package brechmark
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/b5710546232/sparseset/sparseset"
@@ -53,13 +52,19 @@ func benchmark_map_write(n int) {
 func benchmark_map_str_write(n int) {
 	m := make(map[int]string, n)
 	for i := 1; i <= n; i++ {
-		m[i] = fmt.Sprintf("%d", i)
+		m[i] = string(rune(i))
 	}
 }
 
 func Benchmark_spareset_int_write_10_000(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		benchmark_spareset_int_write(10_000)
+		benchmark_spareset_int_write(10_000, 10_000)
+	}
+}
+
+func Benchmark_spareset_int_write_10_000_init_100(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		benchmark_spareset_int_write(10_000, 100)
 	}
 }
 
@@ -71,7 +76,7 @@ func Benchmark_spareset_str_write_10_000(b *testing.B) {
 
 func Benchmark_spareset_read_int_10_000(b *testing.B) {
 	n := 10_000
-	m := sparseset.NewSparseSet[int](n, n)
+	m := sparseset.NewSparseSet[int](n)
 	for i := 1; i <= n; i++ {
 		m.Put(uint(i), i)
 	}
@@ -82,7 +87,7 @@ func Benchmark_spareset_read_int_10_000(b *testing.B) {
 
 func Benchmark_spareset_read_str_10_000(b *testing.B) {
 	n := 10_000
-	m := sparseset.NewSparseSet[string](n, n)
+	m := sparseset.NewSparseSet[string](n)
 	for i := 1; i <= n; i++ {
 		m.Put(uint(i), string(rune(i)))
 	}
@@ -103,28 +108,32 @@ func benchmark_map_read_str(m map[int]string) {
 	}
 }
 
-func benchmark_spareset_int_write(n int) {
-	m := sparseset.NewSparseSet[int](n, n)
+func benchmark_spareset_int_write(n, init int) {
+	m := sparseset.NewSparseSet[int](init)
 	for i := 1; i <= n; i++ {
 		m.Put(uint(i), i)
 	}
 }
 
 func benchmark_spareset_str_write(n int) {
-	m := sparseset.NewSparseSet[string](n, n)
+	m := sparseset.NewSparseSet[string](n)
 	for i := 1; i <= n; i++ {
-		m.Put(uint(i), fmt.Sprintf("%d", i))
+		m.Put(uint(i), string(rune(i)))
 	}
 }
 
 func benchmark_spareset_read(ss *sparseset.SparseSet[int]) {
-	for i := range ss.Dense {
-		_ = ss.Dense[i]
+	var val int
+	for i := range ss.Dense() {
+		val = ss.Dense()[i]
 	}
+	_ = val
 }
 
 func benchmark_spareset_str_read(ss *sparseset.SparseSet[string]) {
-	for i := range ss.Dense {
-		_ = ss.Dense[i]
+	var val string
+	for i := range ss.Dense() {
+		val = ss.Dense()[i]
 	}
+	_ = val
 }
