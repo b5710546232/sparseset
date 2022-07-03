@@ -59,7 +59,7 @@ func (s *SparseSet[T]) Put(id uint, val T) bool {
 
 func (s *SparseSet[T]) Get(id uint) (T, bool) {
 	sIdx := int(id - 1)
-	if sIdx > len(s.sparse) {
+	if sIdx > len(s.sparse) || sIdx < 0 {
 		var t T
 		return pass(t), false
 	}

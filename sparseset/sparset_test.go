@@ -49,4 +49,8 @@ func TestAddInt(t *testing.T) {
 	assert.Equal(t, 9999, val)
 	val, _ = ss.Get(11_111)
 	assert.NotEqual(t, 11_111, val)
+	val, _ = ss.Get(1)
+	assert.Equal(t, 1, val)
+	_, ok := ss.Get(0)
+	assert.Equal(t, false, ok)
 }
