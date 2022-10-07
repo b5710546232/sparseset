@@ -1,142 +1,88 @@
 package sparseset
 
-import (
-	"fmt"
-	"math"
-)
-
 type SparseSet[T any] struct {
-	sparse    []uint // Stores index, id
-	dense     []T    // Stores the actual data
-	n         int    // Current size of dense
-	denseSize int
+	denseMap []uint
+	dense    []T
+	sparse   []uint
 }
 
-const emptySlot = math.MaxUint
-
-func NewSparseSet[T any](initialSize int) *SparseSet[T] {
-	ss := &SparseSet[T]{
-		sparse:    make([]uint, initialSize),
-		dense:     make([]T, initialSize),
-		denseSize: initialSize,
-		n:         0,
+func NewSparseSet[T any](initialSize uint) *SparseSet[T] {
+	return &SparseSet[T]{
+		sparse: make([]uint, initialSize+1),
 	}
-
-	for i := range ss.sparse {
-		ss.sparse[i] = emptySlot
-	}
-	return ss
 }
 
-func (s *SparseSet[T]) Put(id uint, val T) bool {
-	if id <= 0 {
-		return false
-	}
+const emptySlot = 0
 
-	idx := id - 1
-	denseIdx := s.n
-	if !s.Contains(id) {
-		s.n += 1
-	} else {
-		denseIdx = int(s.sparse[idx])
+func (s *SparseSet[T]) PutVal(id uint, val T) bool {
+	return s.Put(id, &val)
+}
+
+func (s *SparseSet[T]) newMaxValue(maxValue uint) {
+	if len(s.sparse) >= int(maxValue+1) {
+		panic("only increasing is possible")
 	}
-	diffSparseSize := int(idx) - len(s.sparse)
-	if diffSparseSize >= 0 {
-		for i := 0; i < diffSparseSize+1; i++ {
-			s.sparse = append(s.sparse, emptySlot)
+	newSparse := make([]uint, maxValue+1)
+	copy(newSparse, s.sparse[:])
+	s.sparse = newSparse
+}
+
+func (s *SparseSet[T]) Put(id uint, val *T) bool {
+	if int(id) >= len(s.sparse) {
+		newMaxValue := uint(len(s.sparse) * 2)
+		if newMaxValue < id {
+			newMaxValue = id + 1
 		}
-	}
-	lastcurrentDenseSizeIdx := uint(s.n) - 1
-	s.sparse[idx] = lastcurrentDenseSizeIdx
-	if s.n <= len(s.dense) {
-		s.dense[denseIdx] = val
-	} else {
-		s.dense = append(s.dense, val)
+		s.newMaxValue(newMaxValue)
 	}
 
+	s.dense = append(s.dense, *val)
+	s.denseMap = append(s.denseMap, id)
+	s.sparse[id] = uint(len(s.dense))
 	return true
 }
 
-func (s *SparseSet[T]) Get(id uint) (T, bool) {
-	sIdx := int(id - 1)
-	if sIdx > len(s.sparse) || sIdx < 0 {
-		var t T
-		return pass(t), false
+func (s *SparseSet[T]) Get(id uint) *T {
+	if int(id) >= len(s.sparse) {
+		return nil
 	}
-	idx := s.sparse[sIdx]
-	if idx == emptySlot {
-		var t T
-		return pass(t), false
+	idx := s.sparse[id]
+	if idx == 0 || int(idx) > len(s.dense) {
+		return nil
 	}
-	return s.dense[idx], true
-}
-
-func pass[T any](tp T) T {
-	return tp
-}
-
-func (s *SparseSet[T]) Remove(id uint) bool {
-	if !s.Contains(id) {
-		return false
-	}
-
-	lastDense := s.dense[s.n-1]
-	idx := id - 1
-	s.dense[idx] = lastDense
-	s.sparse[idx] = emptySlot
-
-	s.n -= 1
-	return true
-}
-
-func (s *SparseSet[T]) PrintDense() {
-	fmt.Printf("\n----PrintDense----\n")
-	for i := 0; i < s.n; i++ {
-		fmt.Println("idx", i, "=>", s.dense[i])
-	}
-	fmt.Printf("\n--------\n")
-}
-
-func (s *SparseSet[T]) PrintSpase() {
-	fmt.Println("PrintSpase")
-	fmt.Printf("[ ")
-	for i := range s.sparse {
-		if s.sparse[i] == emptySlot {
-			fmt.Print(" nil ,")
-		} else {
-			fmt.Printf("%d ,", s.sparse[i])
-		}
-
-	}
-	fmt.Printf(" ]\n")
-}
-
-func (s *SparseSet[T]) PrintSpaseIds() {
-	fmt.Println("PrintSpase")
-	fmt.Printf(" [\n")
-	for i := range s.sparse {
-		if s.sparse[i] != emptySlot {
-			fmt.Printf("\tindex-%d => %d \n", i, s.sparse[i]+1)
-		}
-
-	}
-	fmt.Printf(" ]\n")
+	return &s.dense[idx-1]
 }
 
 func (s *SparseSet[T]) Contains(id uint) bool {
-	idx := id - 1
-	if int(idx) > len(s.sparse)-1 {
-		return false
-	}
-	return s.sparse[idx] != emptySlot
+	return s.Get(id) != nil
 }
 
-func (s *SparseSet[T]) ForEach(f func(int, T)) {
-	for i := range s.dense {
-		f(i, s.dense[i])
+func (s *SparseSet[T]) Remove(id uint) {
+	if s.Get(id) == nil {
+		return
 	}
+
+	idx := s.sparse[id]
+	s.sparse[id] = 0
+	last := s.dense[len(s.dense)-1]
+	lastSparse := s.denseMap[len(s.denseMap)-1]
+
+	if int(idx) < len(s.dense) {
+		s.dense[idx-1] = last
+		s.denseMap[idx-1] = lastSparse
+		s.sparse[lastSparse] = idx
+	}
+
+	s.dense = s.dense[:len(s.dense)-1]
+	s.denseMap = s.denseMap[:len(s.denseMap)-1]
 }
 
-func (s *SparseSet[T]) Dense() []T {
+func (s *SparseSet[T]) Clear() {
+	s.dense = s.dense[:0]
+	s.denseMap = s.denseMap[:0]
+	s.sparse = make([]uint, len(s.sparse))
+}
+
+func (s *SparseSet[T]) Values() []T {
 	return s.dense
 }
